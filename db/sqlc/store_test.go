@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"github.com/stretchr/testify/require"
-	"sync"
 	"testing"
 )
 
@@ -19,13 +18,8 @@ func TestStore_TransferTx(t *testing.T) {
 	errs := make(chan error)
 	results := make(chan TransferTxResult)
 
-	var wg sync.WaitGroup
-
 	for i := 0; i < n; i++ {
-		wg.Add(1)
-
 		go func() {
-			defer wg.Done()
 			result, err := store.TransferTx(context.Background(), TransferTxParams{
 				accountOne.ID, accountTwo.ID, amount,
 			})
@@ -35,6 +29,7 @@ func TestStore_TransferTx(t *testing.T) {
 		}()
 	}
 
+	existed := make(map[int]bool)
 	for i := 0; i < n; i++ {
 		err := <-errs
 		require.NoError(t, err)
@@ -74,7 +69,35 @@ func TestStore_TransferTx(t *testing.T) {
 		_, err = store.GetEntry(context.Background(), toEntry.ID)
 		require.NoError(t, err)
 
-		// TODO: check accounts' balance
+		// check accounts
+		fromAccount := result.FromAccount
+		require.NotEmpty(t, fromAccount)
+		require.Equal(t, accountOne.ID, fromAccount.ID)
+
+		toAccount := result.ToAccount
+		require.NotEmpty(t, toAccount)
+		require.Equal(t, accountTwo.ID, toAccount.ID)
+
+		// check accounts' balance
+		diffOne := accountOne.Balance - fromAccount.Balance
+		diffTwo := toAccount.Balance - accountTwo.Balance
+		require.Equal(t, diffOne, diffTwo)
+		require.True(t, diffOne > 0)
+		require.True(t, diffTwo > 0)
+		require.True(t, diffOne%amount == 0)
+
+		k := int(diffOne / amount)
+		require.True(t, k >= 1 && k <= n)
+		require.NotContains(t, existed, k)
+		existed[k] = true
 	}
-	wg.Wait()
+
+	updateAccountOne, err := store.GetAccount(context.Background(), accountOne.ID)
+	require.NoError(t, err)
+
+	updateAccountTwo, err := store.GetAccount(context.Background(), accountTwo.ID)
+	require.NoError(t, err)
+
+	require.Equal(t, accountOne.Balance-int64(n)*amount, updateAccountOne.Balance)
+	require.Equal(t, accountTwo.Balance+int64(n)*amount, updateAccountTwo.Balance)
 }

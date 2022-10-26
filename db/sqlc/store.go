@@ -50,7 +50,7 @@ type TransferTxParams struct {
 type TransferTxResult struct {
 	Transfer    Transfer `json:"transfer"`
 	FromAccount Account  `json:"from_account"`
-	ToAccountID Account  `json:"to_account"`
+	ToAccount   Account  `json:"to_account"`
 	FromEntry   Entry    `json:"from_entry"`
 	ToEntry     Entry    `json:"to_entry"`
 }
@@ -61,30 +61,44 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 	var result TransferTxResult
 
 	err := store.execTx(ctx, func(queries *Queries) error {
-		transfer, err := queries.CreateTransfer(ctx, CreateTransferParams{
+		var err error
+
+		result.Transfer, err = queries.CreateTransfer(ctx, CreateTransferParams{
 			arg.FromAccountID, arg.ToAccountID, arg.Amount,
 		})
-
-		result.Transfer = transfer
 		if err != nil {
 			return err
 		}
 
 		result.FromEntry, err = queries.CreateEntry(ctx, CreateEntryParams{
-			arg.FromAccountID, -arg.Amount})
+			arg.FromAccountID, -arg.Amount,
+		})
 
 		if err != nil {
 			return err
 		}
 
 		result.ToEntry, err = queries.CreateEntry(ctx, CreateEntryParams{
-			arg.ToAccountID, arg.Amount})
+			arg.ToAccountID, arg.Amount,
+		})
 
 		if err != nil {
 			return err
 		}
 
-		// TODO: update accounts' balance
+		result.FromAccount, err = queries.AddAccountBalance(ctx, AddAccountBalanceParams{
+			-arg.Amount, arg.FromAccountID,
+		})
+		if err != nil {
+			return err
+		}
+
+		result.ToAccount, err = queries.AddAccountBalance(ctx, AddAccountBalanceParams{
+			arg.Amount, arg.ToAccountID,
+		})
+		if err != nil {
+			return err
+		}
 
 		return nil
 	})
