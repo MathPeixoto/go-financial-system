@@ -9,12 +9,7 @@ import (
 )
 
 func createRandomAccount(t *testing.T) Account {
-	arg := CreateAccountParams{
-		Owner:    util.RandomOwner(),
-		Balance:  util.RandomMoney(),
-		Currency: util.RandomCurrency(),
-	}
-
+	arg := CreateAccountParams{util.RandomOwner(), util.RandomMoney(), util.RandomCurrency()}
 	account, err := testQueries.CreateAccount(context.Background(), arg)
 
 	require.NoError(t, err)
@@ -45,11 +40,7 @@ func TestQueries_GetAccount(t *testing.T) {
 func TestQueries_UpdateAccount(t *testing.T) {
 	accountOne := createRandomAccount(t)
 
-	arg := UpdateAccountParams{
-		ID:      accountOne.ID,
-		Balance: util.RandomMoney(),
-	}
-
+	arg := UpdateAccountParams{accountOne.ID, util.RandomMoney()}
 	accountTwo, err := testQueries.UpdateAccount(context.Background(), arg)
 
 	require.NoError(t, err)
@@ -76,11 +67,7 @@ func TestQueries_ListAccounts(t *testing.T) {
 		createRandomAccount(t)
 	}
 
-	arg := ListAccountsParams{
-		Limit:  5,
-		Offset: 5,
-	}
-
+	arg := ListAccountsParams{5, 5}
 	accounts, err := testQueries.ListAccounts(context.Background(), arg)
 
 	require.NoError(t, err)

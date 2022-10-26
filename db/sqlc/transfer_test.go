@@ -9,11 +9,7 @@ import (
 )
 
 func createRandomTransfer(t *testing.T, accountOne, accountTwo Account) Transfer {
-	arg := CreateTransferParams{
-		FromAccountID: accountOne.ID,
-		ToAccountID:   accountTwo.ID,
-		Amount:        util.RandomMoney(),
-	}
+	arg := CreateTransferParams{accountOne.ID, accountTwo.ID, util.RandomMoney()}
 
 	Transfer, err := testQueries.CreateTransfer(context.Background(), arg)
 
@@ -51,11 +47,7 @@ func TestQueries_UpdateTransfer(t *testing.T) {
 	accountTwo := createRandomAccount(t)
 	transferOne := createRandomTransfer(t, accountOne, accountTwo)
 
-	arg := UpdateTransferParams{
-		ID:     transferOne.ID,
-		Amount: util.RandomMoney(),
-	}
-
+	arg := UpdateTransferParams{transferOne.ID, util.RandomMoney()}
 	transferTwo, err := testQueries.UpdateTransfer(context.Background(), arg)
 
 	require.NoError(t, err)
@@ -89,10 +81,7 @@ func TestQueries_ListTransfers(t *testing.T) {
 		createRandomTransfer(t, accountOne, accountTwo)
 	}
 
-	arg := ListTransfersParams{
-		Limit:  5,
-		Offset: 5,
-	}
+	arg := ListTransfersParams{5, 5}
 
 	entries, err := testQueries.ListTransfers(context.Background(), arg)
 
