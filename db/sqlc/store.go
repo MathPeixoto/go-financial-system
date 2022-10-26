@@ -86,22 +86,39 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
-		result.FromAccount, err = queries.AddAccountBalance(ctx, AddAccountBalanceParams{
-			-arg.Amount, arg.FromAccountID,
-		})
-		if err != nil {
-			return err
-		}
-
-		result.ToAccount, err = queries.AddAccountBalance(ctx, AddAccountBalanceParams{
-			arg.Amount, arg.ToAccountID,
-		})
-		if err != nil {
-			return err
+		// One good way to avoid deadlock is to update the account always in a given order.
+		if arg.FromAccountID < arg.ToAccountID {
+			result.FromAccount, result.ToAccount, err = addMoney(
+				ctx, queries, arg.FromAccountID, -arg.Amount, arg.ToAccountID, arg.Amount,
+			)
+		} else {
+			result.ToAccount, result.FromAccount, err = addMoney(
+				ctx, queries, arg.ToAccountID, arg.Amount, arg.FromAccountID, -arg.Amount,
+			)
 		}
 
 		return nil
 	})
 
 	return result, err
+}
+
+func addMoney(
+	ctx context.Context, queries *Queries, accountIdOne int64, amountOne int64, accountIdTwo int64, amountTwo int64,
+) (accountOne Account, accountTwo Account, err error) {
+	accountOne, err = queries.AddAccountBalance(ctx, AddAccountBalanceParams{
+		amountOne, accountIdOne,
+	})
+	if err != nil {
+		return
+	}
+
+	accountTwo, err = queries.AddAccountBalance(ctx, AddAccountBalanceParams{
+		amountTwo, accountIdTwo,
+	})
+	if err != nil {
+		return
+	}
+
+	return
 }
