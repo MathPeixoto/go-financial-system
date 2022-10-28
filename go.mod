@@ -6,9 +6,6 @@ require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/lib/pq v1.10.7
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
-)
-
-require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect

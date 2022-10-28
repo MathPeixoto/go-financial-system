@@ -27,4 +27,7 @@ test:
 run:
 	go run .
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test run
+gin:
+	go get -u github.com/gin-gonic/gin
+
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test run gin
