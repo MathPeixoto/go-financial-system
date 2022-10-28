@@ -1,19 +1,32 @@
 package main
 
 import (
-	"bancario/controllers"
-	"github.com/gin-gonic/gin"
+	"bancario/api"
+	db "bancario/db/sqlc"
+	"database/sql"
+	_ "github.com/lib/pq"
+	"log"
+)
+
+const (
+	dbDriver = "postgres"
+	dbSource = "postgresql://root:postgres@localhost:5432/bank?sslmode=disable"
+	address  = "localhost:8080"
 )
 
 func main() {
 
-	c := controllers.Transaction{}
-
-	router := gin.Default()
-	router.GET("/transactions/sourceId/:sourceId", c.GetTransactionsBySourceId)
-	router.GET("/transactions/destinationId/:destinationId", c.GetTransactionsByDestinationId)
-	err := router.Run("localhost:8080")
+	var conn *sql.DB
+	conn, err := sql.Open(dbDriver, dbSource)
 	if err != nil {
+		log.Fatalln("cannot connect to database:", err)
+	}
+
+	store := db.NewStore(conn)
+	server := api.NewServer(store)
+	err = server.Start(address)
+	if err != nil {
+		log.Fatalln("cannot start server:", err)
 		return
 	}
 }
