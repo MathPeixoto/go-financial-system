@@ -1,9 +1,9 @@
 package db
 
 import (
-	"bancario/util"
 	"context"
 	"database/sql"
+	"github.com/MathPeixoto/go-financial-system/util"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
