@@ -1,4 +1,4 @@
-module bancario
+module https://github.com/MathPeixoto/go-financial-system/
 
 go 1.19
 
