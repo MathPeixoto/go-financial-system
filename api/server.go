@@ -1,7 +1,7 @@
 package api
 
 import (
-	db "bancario/db/sqlc"
+	db "github.com/MathPeixoto/go-financial-system/db/sqlc"
 	"github.com/gin-gonic/gin"
 )
 

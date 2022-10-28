@@ -1,9 +1,9 @@
 package main
 
 import (
-	"bancario/api"
-	db "bancario/db/sqlc"
 	"database/sql"
+	"github.com/MathPeixoto/go-financial-system/api"
+	db "github.com/MathPeixoto/go-financial-system/db/sqlc"
 	_ "github.com/lib/pq"
 	"log"
 )
