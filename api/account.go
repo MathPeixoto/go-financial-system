@@ -10,6 +10,7 @@ import (
 type createAccountRequest struct {
 	Owner    string `json:"owner" binding:"required"`
 	Currency string `json:"currency" binding:"required,oneof=USD EUR BRL"`
+	Amount   int64  `json:"amount"`
 }
 
 func (server *Server) createAccount(c *gin.Context) {
@@ -34,12 +35,12 @@ func (server *Server) createAccount(c *gin.Context) {
 	c.JSON(http.StatusOK, createAccount)
 }
 
-type getAccountRequest struct {
+type idAccountRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
 
 func (server *Server) getAccount(c *gin.Context) {
-	var request getAccountRequest
+	var request idAccountRequest
 	if err := c.ShouldBindUri(&request); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -81,4 +82,47 @@ func (server *Server) listAccounts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, accounts)
+}
+
+func (server *Server) updateAccountBalance(c *gin.Context) {
+	var request idAccountRequest
+	if err := c.ShouldBindUri(&request); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	var account createAccountRequest
+	if err := c.ShouldBindJSON(&account); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	arg := db.AddAccountBalanceParams{
+		ID:     request.ID,
+		Amount: account.Amount,
+	}
+
+	_, err := server.store.AddAccountBalance(c, arg)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+}
+
+func (server *Server) deleteAccount(c *gin.Context) {
+	var request idAccountRequest
+	if err := c.ShouldBindUri(&request); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	err := server.store.DeleteAccount(c, request.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
 }

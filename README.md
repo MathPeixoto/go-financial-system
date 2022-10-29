@@ -11,12 +11,6 @@ Project using these technologies
 
 
 ## Installing
-### Migrate tool
-`sudo apt install python3-migrate`
-
-### Sqlc (Go > 1.17)
-`go install github.com/kyleconroy/sqlc/cmd/sqlc@latest`
-
 
 ### To generate Go code from SQL: 
 

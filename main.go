@@ -5,6 +5,7 @@ import (
 	"github.com/MathPeixoto/go-financial-system/api"
 	db "github.com/MathPeixoto/go-financial-system/db/sqlc"
 	"github.com/MathPeixoto/go-financial-system/util"
+	_ "github.com/golang/mock/mockgen/model"
 	_ "github.com/lib/pq"
 	"log"
 )

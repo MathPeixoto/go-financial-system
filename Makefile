@@ -18,6 +18,9 @@ migrateup:
 migratedown:
 	migrate -path db/migration -database "postgresql://root:postgres@localhost:5432/bank?sslmode=disable" -verbose down
 
+installSqlc:
+	go install github.com/kyleconroy/sqlc/cmd/sqlc@latest
+
 sqlc:
 	sqlc generate
 
@@ -25,9 +28,9 @@ test:
 	go test -v -cover ./...
 
 run:
-	go run .
+	go run main.go
 
-gin:
-	go get -u github.com/gin-gonic/gin
+mock:
+	mockgen -package mockdb -destination db/mock/store.go github.com/MathPeixoto/go-financial-system/db/sqlc Store
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test run gin
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test run gin mock
