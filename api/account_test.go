@@ -293,7 +293,8 @@ func TestUpdateAccountAPI(t *testing.T) {
 		},
 		{
 			name:       "BadRequest",
-			body:       invalidIdAccountRequest,
+			id:         invalidIdAccountRequest.ID,
+			body:       validAccountRequest,
 			buildStubs: func(store *mockdb.MockStore) {},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusBadRequest, recorder.Code)
@@ -301,6 +302,7 @@ func TestUpdateAccountAPI(t *testing.T) {
 		},
 		{
 			name:       "BadRequest",
+			id:         validIdAccountRequest.ID,
 			body:       invalidAccountRequest,
 			buildStubs: func(store *mockdb.MockStore) {},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
