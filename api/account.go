@@ -13,6 +13,19 @@ type createAccountRequest struct {
 	Amount   int64  `json:"amount"`
 }
 
+type idAccountRequest struct {
+	ID int64 `uri:"id" binding:"required,min=1"`
+}
+
+type updateAccountBalanceRequest struct {
+	Amount int64 `json:"amount" binding:"required,min=1"`
+}
+
+type listAccountsRequest struct {
+	Limit  int32 `form:"limit,default=5" binding:"min=5,max=10"`
+	Offset int32 `form:"offset,default=1" binding:"min=1"`
+}
+
 func (server *Server) createAccount(c *gin.Context) {
 	var account createAccountRequest
 	if err := c.ShouldBindJSON(&account); err != nil {
@@ -35,10 +48,6 @@ func (server *Server) createAccount(c *gin.Context) {
 	c.JSON(http.StatusOK, createAccount)
 }
 
-type idAccountRequest struct {
-	ID int64 `uri:"id" binding:"required,min=1"`
-}
-
 func (server *Server) getAccount(c *gin.Context) {
 	var request idAccountRequest
 	if err := c.ShouldBindUri(&request); err != nil {
@@ -57,11 +66,6 @@ func (server *Server) getAccount(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, account)
-}
-
-type listAccountsRequest struct {
-	Limit  int32 `form:"limit,default=5" binding:"min=5,max=10"`
-	Offset int32 `form:"offset,default=1" binding:"min=1"`
 }
 
 func (server *Server) listAccounts(c *gin.Context) {
@@ -85,30 +89,30 @@ func (server *Server) listAccounts(c *gin.Context) {
 }
 
 func (server *Server) updateAccountBalance(c *gin.Context) {
-	var request idAccountRequest
-	if err := c.ShouldBindUri(&request); err != nil {
+	var requestId idAccountRequest
+	if err := c.ShouldBindUri(&requestId); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	var account createAccountRequest
-	if err := c.ShouldBindJSON(&account); err != nil {
+	var requestAccount updateAccountBalanceRequest
+	if err := c.ShouldBindJSON(&requestAccount); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	arg := db.AddAccountBalanceParams{
-		ID:     request.ID,
-		Amount: account.Amount,
+		ID:     requestId.ID,
+		Amount: requestAccount.Amount,
 	}
 
-	_, err := server.store.AddAccountBalance(c, arg)
+	accountUpdated, err := server.store.AddAccountBalance(c, arg)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	c.JSON(http.StatusOK, nil)
+	c.JSON(http.StatusOK, accountUpdated)
 }
 
 func (server *Server) deleteAccount(c *gin.Context) {
