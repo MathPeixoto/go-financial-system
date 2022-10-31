@@ -1,7 +1,6 @@
 package util
 
 import (
-	"golang.org/x/text/currency"
 	"math/rand"
 	"strings"
 	"time"
@@ -43,11 +42,7 @@ func RandomMoney() int64 {
 
 // RandomCurrency generates a random currency code
 func RandomCurrency() string {
-	currencies := []string{
-		currency.EUR.String(),
-		currency.USD.String(),
-		currency.BRL.String(),
-	}
+	currencies := []string{EUR, USD, BRL}
 
 	n := len(currencies)
 	return currencies[rand.Intn(n)]
