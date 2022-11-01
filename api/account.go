@@ -7,27 +7,27 @@ import (
 	"net/http"
 )
 
-type createAccountRequest struct {
+type CreateAccountRequest struct {
 	Owner    string `json:"owner" binding:"required"`
 	Currency string `json:"currency" binding:"required,currency"`
 	Amount   int64  `json:"amount"`
 }
 
-type idAccountRequest struct {
+type IdAccountRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
 
-type updateAccountBalanceRequest struct {
+type UpdateAccountBalanceRequest struct {
 	Amount int64 `json:"amount" binding:"required,min=1"`
 }
 
-type listAccountsRequest struct {
+type ListAccountsRequest struct {
 	Limit  int32 `form:"limit,default=5" binding:"min=5,max=10"`
 	Offset int32 `form:"offset,default=1" binding:"min=1"`
 }
 
 func (server *Server) createAccount(c *gin.Context) {
-	var account createAccountRequest
+	var account CreateAccountRequest
 	if err := c.ShouldBindJSON(&account); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -49,7 +49,7 @@ func (server *Server) createAccount(c *gin.Context) {
 }
 
 func (server *Server) getAccount(c *gin.Context) {
-	var request idAccountRequest
+	var request IdAccountRequest
 	if err := c.ShouldBindUri(&request); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -69,7 +69,7 @@ func (server *Server) getAccount(c *gin.Context) {
 }
 
 func (server *Server) listAccounts(c *gin.Context) {
-	var request listAccountsRequest
+	var request ListAccountsRequest
 	if err := c.ShouldBindQuery(&request); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -89,13 +89,13 @@ func (server *Server) listAccounts(c *gin.Context) {
 }
 
 func (server *Server) updateAccountBalance(c *gin.Context) {
-	var requestId idAccountRequest
+	var requestId IdAccountRequest
 	if err := c.ShouldBindUri(&requestId); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	var requestAccount updateAccountBalanceRequest
+	var requestAccount UpdateAccountBalanceRequest
 	if err := c.ShouldBindJSON(&requestAccount); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -116,7 +116,7 @@ func (server *Server) updateAccountBalance(c *gin.Context) {
 }
 
 func (server *Server) deleteAccount(c *gin.Context) {
-	var request idAccountRequest
+	var request IdAccountRequest
 	if err := c.ShouldBindUri(&request); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
