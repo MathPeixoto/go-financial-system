@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	mockdb "github.com/MathPeixoto/go-financial-system/db/mock"
 	db "github.com/MathPeixoto/go-financial-system/db/sqlc"
 	"github.com/MathPeixoto/go-financial-system/util"
@@ -151,11 +152,95 @@ func TestCreateTransferAPI(t *testing.T) {
 	}
 }
 
+func TestGetTransfer(t *testing.T) {
+	// prepare test data
+	accountOne := randomAccount()
+	accountTwo := randomAccount()
+	dbTransfer := randomTransfer(accountOne, accountTwo)
+
+	testCases := []struct {
+		name          string
+		id            int64
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(recorder *httptest.ResponseRecorder)
+	}{
+		{
+			name: "OK",
+			id:   dbTransfer.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().GetTransfer(gomock.Any(), gomock.Eq(dbTransfer.ID)).Times(1).Return(dbTransfer, nil)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, recorder.Code)
+				requireBodyMatchTransfer(t, recorder.Body, dbTransfer)
+			},
+		},
+		{
+			name: "NotFound",
+			id:   dbTransfer.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().GetTransfer(gomock.Any(), gomock.Eq(dbTransfer.ID)).Times(1).Return(db.Transfer{}, sql.ErrNoRows)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusNotFound, recorder.Code)
+			},
+		},
+		{
+			name:       "Bad Request",
+			id:         -1,
+			buildStubs: func(store *mockdb.MockStore) {},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+			},
+		},
+		{
+			name: "Internal Server Error",
+			id:   dbTransfer.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().GetTransfer(gomock.Any(), gomock.Eq(dbTransfer.ID)).Times(1).Return(db.Transfer{}, sql.ErrConnDone)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			// prepare stubs
+			ctrl := gomock.NewController(t)
+			store := mockdb.NewMockStore(ctrl)
+			testCase.buildStubs(store)
+
+			// start test server
+			server := NewServer(store)
+			recorder := httptest.NewRecorder()
+
+			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("/transfers/%d", testCase.id), nil)
+			require.NoError(t, err)
+
+			server.router.ServeHTTP(recorder, request)
+			testCase.checkResponse(recorder)
+		})
+	}
+}
+
 func requireBodyMatchTransferTx(t *testing.T, body *bytes.Buffer, transfer db.TransferTxResult) {
 	data, err := io.ReadAll(body)
 	require.NoError(t, err)
 
-	var gotTransfer db.TransferTxResult
+	var gotTransferTx db.TransferTxResult
+	err = json.Unmarshal(data, &gotTransferTx)
+	require.NoError(t, err)
+
+	require.Equal(t, transfer, gotTransferTx)
+}
+
+func requireBodyMatchTransfer(t *testing.T, body *bytes.Buffer, transfer db.Transfer) {
+	data, err := io.ReadAll(body)
+	require.NoError(t, err)
+
+	var gotTransfer db.Transfer
 	err = json.Unmarshal(data, &gotTransfer)
 	require.NoError(t, err)
 

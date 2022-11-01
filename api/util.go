@@ -101,3 +101,12 @@ func createTransferTx(transferTxParams db.TransferTxParams) db.TransferTxResult 
 		},
 	}
 }
+
+func randomTransfer(accountOne, accountTwo db.Account) db.Transfer {
+	return db.Transfer{
+		ID:            util.RandomInt(1, 1000),
+		FromAccountID: accountOne.ID,
+		ToAccountID:   accountTwo.ID,
+		Amount:        util.RandomMoney(),
+	}
+}

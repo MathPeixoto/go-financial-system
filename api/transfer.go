@@ -58,6 +58,10 @@ func (server *Server) getTransfer(c *gin.Context) {
 
 	transfer, err := server.store.GetTransfer(c, request.ID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
