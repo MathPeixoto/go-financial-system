@@ -15,8 +15,14 @@ migrate:
 migrateup:
 	migrate -path db/migration -database "postgresql://root:postgres@localhost:5432/bank?sslmode=disable" -verbose up
 
+migrateup1:
+	migrate -path db/migration -database "postgresql://root:postgres@localhost:5432/bank?sslmode=disable" -verbose up 1
+
 migratedown:
 	migrate -path db/migration -database "postgresql://root:postgres@localhost:5432/bank?sslmode=disable" -verbose down
+
+migratedown1:
+	migrate -path db/migration -database "postgresql://root:postgres@localhost:5432/bank?sslmode=disable" -verbose down 1
 
 installSqlc:
 	go install github.com/kyleconroy/sqlc/cmd/sqlc@latest
@@ -33,4 +39,4 @@ run:
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/MathPeixoto/go-financial-system/db/sqlc Store
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test run gin mock
+.PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 sqlc test run gin mock
