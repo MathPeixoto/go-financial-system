@@ -88,17 +88,17 @@ func TestGetAccountAPI(t *testing.T) {
 }
 
 func TestCreateAccountAPI(t *testing.T) {
-	valIdAccountRequest := CreateAccountRequest{
+	validAccountRequest := CreateAccountRequest{
 		Owner:    util.RandomOwner(),
 		Currency: util.RandomCurrency(),
 	}
 
-	invalidIdAccountRequest := CreateAccountRequest{
+	invalidAccountRequest := CreateAccountRequest{
 		Owner:    util.RandomOwner(),
 		Currency: "invalid",
 	}
 
-	accountParams := getAccountParams(valIdAccountRequest)
+	accountParams := getAccountParams(validAccountRequest)
 
 	dbAccount := createAccount(accountParams)
 
@@ -110,7 +110,7 @@ func TestCreateAccountAPI(t *testing.T) {
 	}{
 		{
 			name: "OK",
-			body: valIdAccountRequest,
+			body: validAccountRequest,
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().CreateAccount(gomock.Any(), gomock.Eq(accountParams)).Times(1).Return(dbAccount, nil)
 			},
@@ -121,7 +121,7 @@ func TestCreateAccountAPI(t *testing.T) {
 		},
 		{
 			name:       "BadRequest",
-			body:       invalidIdAccountRequest,
+			body:       invalidAccountRequest,
 			buildStubs: func(store *mockdb.MockStore) {},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusBadRequest, recorder.Code)
@@ -129,7 +129,7 @@ func TestCreateAccountAPI(t *testing.T) {
 		},
 		{
 			name: "InternalError",
-			body: valIdAccountRequest,
+			body: validAccountRequest,
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().CreateAccount(gomock.Any(), gomock.Eq(accountParams)).Times(1).Return(db.Account{}, sql.ErrConnDone)
 			},
@@ -249,15 +249,15 @@ func TestListAccountAPI(t *testing.T) {
 func TestUpdateAccountAPI(t *testing.T) {
 	dbAccount := randomAccount()
 
-	validIdAccountRequest := IdAccountRequest{
+	validIDAccountRequest := IDAccountRequest{
 		ID: dbAccount.ID,
 	}
 
-	invalidIdAccountRequest := IdAccountRequest{
+	invalidIDAccountRequest := IDAccountRequest{
 		ID: -1,
 	}
 
-	valIdAccountRequest := UpdateAccountBalanceRequest{
+	validAccountRequest := UpdateAccountBalanceRequest{
 		Amount: util.RandomMoney(),
 	}
 
@@ -267,7 +267,7 @@ func TestUpdateAccountAPI(t *testing.T) {
 
 	arg := db.AddAccountBalanceParams{
 		ID:     dbAccount.ID,
-		Amount: valIdAccountRequest.Amount,
+		Amount: validAccountRequest.Amount,
 	}
 
 	updatedAccount := updatedAccount(dbAccount, arg)
@@ -281,8 +281,8 @@ func TestUpdateAccountAPI(t *testing.T) {
 	}{
 		{
 			name: "OK",
-			id:   validIdAccountRequest.ID,
-			body: valIdAccountRequest,
+			id:   validIDAccountRequest.ID,
+			body: validAccountRequest,
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().AddAccountBalance(gomock.Any(), gomock.Eq(arg)).Times(1).Return(updatedAccount, nil)
 			},
@@ -293,8 +293,8 @@ func TestUpdateAccountAPI(t *testing.T) {
 		},
 		{
 			name:       "BadRequest",
-			id:         invalidIdAccountRequest.ID,
-			body:       valIdAccountRequest,
+			id:         invalidIDAccountRequest.ID,
+			body:       validAccountRequest,
 			buildStubs: func(store *mockdb.MockStore) {},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusBadRequest, recorder.Code)
@@ -302,7 +302,7 @@ func TestUpdateAccountAPI(t *testing.T) {
 		},
 		{
 			name:       "BadRequest",
-			id:         validIdAccountRequest.ID,
+			id:         validIDAccountRequest.ID,
 			body:       invalidAccountRequest,
 			buildStubs: func(store *mockdb.MockStore) {},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
@@ -311,8 +311,8 @@ func TestUpdateAccountAPI(t *testing.T) {
 		},
 		{
 			name: "InternalError",
-			id:   validIdAccountRequest.ID,
-			body: valIdAccountRequest,
+			id:   validIDAccountRequest.ID,
+			body: validAccountRequest,
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().AddAccountBalance(gomock.Any(), gomock.Eq(arg)).Times(1).Return(db.Account{}, sql.ErrConnDone)
 			},

@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	db "github.com/MathPeixoto/go-financial-system/db/sqlc"
 	"github.com/gin-gonic/gin"
@@ -58,7 +59,7 @@ func (server *Server) getTransfer(c *gin.Context) {
 
 	transfer, err := server.store.GetTransfer(c, request.ID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
@@ -72,7 +73,7 @@ func (server *Server) getTransfer(c *gin.Context) {
 func (server *Server) validAccount(c *gin.Context, accountID int64, currency string) bool {
 	account, err := server.store.GetAccount(c, accountID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusBadRequest, errorResponse(err))
 			return false
 		}

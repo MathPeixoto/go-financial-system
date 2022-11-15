@@ -12,7 +12,7 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-// RandomInt generates a random integer betwwen min and mx
+// RandomInt generates a random integer between min and mx
 func RandomInt(min, max int64) int64 {
 	return min + rand.Int63n(max-min+1)
 }
@@ -45,5 +45,10 @@ func RandomCurrency() string {
 	currencies := []string{EUR, USD, BRL}
 
 	n := len(currencies)
-	return currencies[rand.Intn(n)]
+	return currencies[rand.Intn(n)] //nolint:gosec
+}
+
+// RandomEmail generates a random email
+func RandomEmail() string {
+	return RandomString(6) + "@gmail.com"
 }

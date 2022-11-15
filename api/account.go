@@ -2,8 +2,10 @@ package api
 
 import (
 	"database/sql"
+	"errors"
 	db "github.com/MathPeixoto/go-financial-system/db/sqlc"
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 	"net/http"
 )
 
@@ -13,7 +15,7 @@ type CreateAccountRequest struct {
 	Amount   int64  `json:"amount"`
 }
 
-type IdAccountRequest struct {
+type IDAccountRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
 
@@ -41,6 +43,14 @@ func (server *Server) createAccount(c *gin.Context) {
 
 	createAccount, err := server.store.CreateAccount(c, arg)
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok { //nolint: errorlint
+			switch pqErr.Code.Name() {
+			case "foreign_key_violation", "unique_violation":
+				c.JSON(http.StatusForbidden, errorResponse(err))
+				return
+			}
+		}
+
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -49,7 +59,7 @@ func (server *Server) createAccount(c *gin.Context) {
 }
 
 func (server *Server) getAccount(c *gin.Context) {
-	var request IdAccountRequest
+	var request IDAccountRequest
 	if err := c.ShouldBindUri(&request); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -57,7 +67,7 @@ func (server *Server) getAccount(c *gin.Context) {
 
 	account, err := server.store.GetAccount(c, request.ID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
@@ -89,8 +99,8 @@ func (server *Server) listAccounts(c *gin.Context) {
 }
 
 func (server *Server) updateAccountBalance(c *gin.Context) {
-	var requestId IdAccountRequest
-	if err := c.ShouldBindUri(&requestId); err != nil {
+	var requestID IDAccountRequest
+	if err := c.ShouldBindUri(&requestID); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
@@ -102,7 +112,7 @@ func (server *Server) updateAccountBalance(c *gin.Context) {
 	}
 
 	arg := db.AddAccountBalanceParams{
-		ID:     requestId.ID,
+		ID:     requestID.ID,
 		Amount: requestAccount.Amount,
 	}
 
@@ -116,7 +126,7 @@ func (server *Server) updateAccountBalance(c *gin.Context) {
 }
 
 func (server *Server) deleteAccount(c *gin.Context) {
-	var request IdAccountRequest
+	var request IDAccountRequest
 	if err := c.ShouldBindUri(&request); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return

@@ -89,5 +89,4 @@ func TestQueries_ListEntries(t *testing.T) {
 	for _, entry := range entries {
 		require.NotEmpty(t, entry)
 	}
-
 }
