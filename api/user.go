@@ -51,9 +51,10 @@ func (server *Server) createUser(c *gin.Context) {
 				c.JSON(http.StatusForbidden, errorResponse(err))
 				return
 			}
-			c.JSON(http.StatusInternalServerError, errorResponse(err))
-			return
 		}
+
+		c.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
 	}
 
 	userResponse := UserResponse{
