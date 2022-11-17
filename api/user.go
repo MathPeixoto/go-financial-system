@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	db "github.com/MathPeixoto/go-financial-system/db/sqlc"
 	"github.com/MathPeixoto/go-financial-system/util"
 	"github.com/gin-gonic/gin"
@@ -22,6 +23,16 @@ type UserResponse struct {
 	Email             string    `json:"email"`
 	PasswordChangedAt time.Time `json:"passwordChangedAt"`
 	CreatedAt         time.Time `json:"createdAt"`
+}
+
+func newUserResponse(user db.User) UserResponse {
+	return UserResponse{
+		Username:          user.Username,
+		FullName:          user.FullName,
+		Email:             user.Email,
+		PasswordChangedAt: user.PasswordChangedAt,
+		CreatedAt:         user.CreatedAt,
+	}
 }
 
 func (server *Server) createUser(c *gin.Context) {
@@ -57,12 +68,52 @@ func (server *Server) createUser(c *gin.Context) {
 		return
 	}
 
-	userResponse := UserResponse{
-		Username:          user.Username,
-		FullName:          user.FullName,
-		Email:             user.Email,
-		PasswordChangedAt: user.PasswordChangedAt,
-		CreatedAt:         user.CreatedAt,
+	userResponse := newUserResponse(user)
+	c.JSON(http.StatusOK, userResponse)
+}
+
+type LoginRequest struct {
+	Username string `json:"username" binding:"required,alphanum,min=4,max=20"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+type LoginResponse struct {
+	AccessToken string       `json:"access_token"`
+	User        UserResponse `json:"user"`
+}
+
+func (server *Server) loginUser(c *gin.Context) {
+	var request LoginRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse(err))
+		return
 	}
+
+	user, err := server.store.GetUser(c, request.Username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	if err := util.CheckPasswordHash(request.Password, user.HashedPassword); err != nil {
+		c.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	token, err := server.tokenMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	userResponse := LoginResponse{
+		AccessToken: token,
+		User:        newUserResponse(user),
+	}
+
 	c.JSON(http.StatusOK, userResponse)
 }
