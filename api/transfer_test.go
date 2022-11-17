@@ -136,7 +136,7 @@ func TestCreateTransferAPI(t *testing.T) {
 			testCase.buildStubs(store)
 
 			// start test server
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			testBody := testCase.body
@@ -213,7 +213,7 @@ func TestGetTransfer(t *testing.T) {
 			testCase.buildStubs(store)
 
 			// start test server
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("/transfers/%d", testCase.id), nil)

@@ -162,7 +162,7 @@ func TestCreateUser(t *testing.T) {
 			store := mockdb.NewMockStore(gomock.NewController(t))
 			testCase.buildStubs(store)
 
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			body, err := json.Marshal(testCase.body)

@@ -75,7 +75,7 @@ func TestGetAccountAPI(t *testing.T) {
 			testCase.buildStubs(store)
 
 			// start test server
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 
@@ -147,7 +147,7 @@ func TestCreateAccountAPI(t *testing.T) {
 			testCase.buildStubs(store)
 
 			// start test server
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			testBody := testCase.body
@@ -234,7 +234,7 @@ func TestListAccountAPI(t *testing.T) {
 			testCase.buildStubs(store)
 
 			// start test server
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 
@@ -330,7 +330,7 @@ func TestUpdateAccountAPI(t *testing.T) {
 			testCase.buildStubs(store)
 
 			// start test server
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			testBody := testCase.body
@@ -395,7 +395,7 @@ func TestDeleteAccountAPI(t *testing.T) {
 			testCase.buildStubs(store)
 
 			// start test server
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 			request, err := http.NewRequest(http.MethodDelete, url, nil)
 
