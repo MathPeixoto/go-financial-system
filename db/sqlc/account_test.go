@@ -39,6 +39,16 @@ func TestQueries_GetAccount(t *testing.T) {
 	require.Equal(t, accountOne, accountTwo)
 }
 
+func TestQueries_GetAccountByOwner(t *testing.T) {
+	accountOne := createRandomAccount(t)
+
+	accountTwo, err := testQueries.GetAccountByOwner(context.Background(), accountOne.Owner)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, accountTwo)
+	require.Equal(t, accountOne, accountTwo)
+}
+
 func TestQueries_GetAccountForUpdate(t *testing.T) {
 	accountOne := createRandomAccount(t)
 
@@ -75,16 +85,18 @@ func TestQueries_DeleteAccount(t *testing.T) {
 }
 
 func TestQueries_ListAccounts(t *testing.T) {
+	var lastAccount Account
 	for i := 0; i < 10; i++ {
-		createRandomAccount(t)
+		lastAccount = createRandomAccount(t)
 	}
 
-	arg := ListAccountsParams{5, 5}
+	arg := ListAccountsParams{lastAccount.Owner, 5, 0}
 	accounts, err := testQueries.ListAccounts(context.Background(), arg)
 
 	require.NoError(t, err)
-	require.Len(t, accounts, 5)
+	require.NotEmpty(t, accounts)
 	for _, account := range accounts {
 		require.NotEmpty(t, account)
+		require.Equal(t, lastAccount.Owner, account.Owner)
 	}
 }

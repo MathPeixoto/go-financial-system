@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	db "github.com/MathPeixoto/go-financial-system/db/sqlc"
+	"github.com/MathPeixoto/go-financial-system/token"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 	"net/http"
 )
 
 type CreateAccountRequest struct {
-	Owner    string `json:"owner" binding:"required"`
 	Currency string `json:"currency" binding:"required,currency"`
 	Amount   int64  `json:"amount"`
 }
@@ -35,8 +35,10 @@ func (server *Server) createAccount(c *gin.Context) {
 		return
 	}
 
+	authPayload := c.MustGet(authPayloadKey).(*token.Payload)
+
 	arg := db.CreateAccountParams{
-		Owner:    account.Owner,
+		Owner:    authPayload.Username,
 		Currency: account.Currency,
 		Balance:  0,
 	}
@@ -75,6 +77,12 @@ func (server *Server) getAccount(c *gin.Context) {
 		return
 	}
 
+	authPayload := c.MustGet(authPayloadKey).(*token.Payload)
+	if account.Owner != authPayload.Username {
+		err = errors.New("account does not belong to the authenticated user")
+		c.JSON(http.StatusForbidden, errorResponse(err))
+		return
+	}
 	c.JSON(http.StatusOK, account)
 }
 
@@ -85,8 +93,11 @@ func (server *Server) listAccounts(c *gin.Context) {
 		return
 	}
 
+	authPayload := c.MustGet(authPayloadKey).(*token.Payload)
 	arg := db.ListAccountsParams{
-		Limit: request.Limit, Offset: (request.Offset - 1) * request.Limit,
+		Owner:  authPayload.Username,
+		Limit:  request.Limit,
+		Offset: (request.Offset - 1) * request.Limit,
 	}
 
 	accounts, err := server.store.ListAccounts(c, arg)
@@ -102,6 +113,11 @@ func (server *Server) updateAccountBalance(c *gin.Context) {
 	var requestID IDAccountRequest
 	if err := c.ShouldBindUri(&requestID); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	err := validateAccountID(c, server, requestID)
+	if err != nil {
 		return
 	}
 
@@ -132,11 +148,32 @@ func (server *Server) deleteAccount(c *gin.Context) {
 		return
 	}
 
-	err := server.store.DeleteAccount(c, request.ID)
+	err := validateAccountID(c, server, request)
+	if err != nil {
+		return
+	}
+
+	err = server.store.DeleteAccount(c, request.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
 	c.JSON(http.StatusOK, nil)
+}
+
+func validateAccountID(c *gin.Context, server *Server, requestID IDAccountRequest) error {
+	authPayload := c.MustGet(authPayloadKey).(*token.Payload)
+	owner, err := server.store.GetAccountByOwner(c, authPayload.Username)
+	if err != nil {
+		return err
+	}
+
+	if owner.ID != requestID.ID {
+		err = errors.New("account does not belong to the authenticated user")
+		c.JSON(http.StatusForbidden, errorResponse(err))
+		return err
+	}
+
+	return nil
 }

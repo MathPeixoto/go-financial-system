@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	db "github.com/MathPeixoto/go-financial-system/db/sqlc"
+	"github.com/MathPeixoto/go-financial-system/token"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -27,11 +28,19 @@ func (server *Server) createTransfer(c *gin.Context) {
 		return
 	}
 
-	if !server.validAccount(c, request.FromAccountID, request.Currency) {
+	fromAccount, valid := server.validAccount(c, request.FromAccountID, request.Currency)
+	if !valid {
 		return
 	}
 
-	if !server.validAccount(c, request.ToAccountID, request.Currency) {
+	authPayload := c.MustGet(authPayloadKey).(*token.Payload)
+	if fromAccount.Owner != authPayload.Username {
+		err := fmt.Errorf("account %d does not belong to the current user", request.FromAccountID)
+		c.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+	_, valid = server.validAccount(c, request.ToAccountID, request.Currency)
+	if !valid {
 		return
 	}
 
@@ -70,23 +79,23 @@ func (server *Server) getTransfer(c *gin.Context) {
 	c.JSON(http.StatusOK, transfer)
 }
 
-func (server *Server) validAccount(c *gin.Context, accountID int64, currency string) bool {
+func (server *Server) validAccount(c *gin.Context, accountID int64, currency string) (db.Account, bool) {
 	account, err := server.store.GetAccount(c, accountID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusBadRequest, errorResponse(err))
-			return false
+			return account, false
 		}
 
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
-		return false
+		return account, false
 	}
 
 	if account.Currency != currency {
 		err := fmt.Errorf("account %d has currency %s, but transfer currency is %s", accountID, account.Currency, currency)
 		c.JSON(http.StatusBadRequest, errorResponse(err))
-		return false
+		return account, false
 	}
 
-	return true
+	return account, true
 }
