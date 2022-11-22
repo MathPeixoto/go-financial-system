@@ -11,6 +11,7 @@ import (
 	"github.com/MathPeixoto/go-financial-system/util"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
@@ -19,7 +20,6 @@ import (
 	"time"
 )
 
-// TODO missing to update tests to test the authorization
 func TestGetAccountAPI(t *testing.T) {
 	user, _ := randomUser(t)
 	account := randomAccount(user.Username)
@@ -82,6 +82,19 @@ func TestGetAccountAPI(t *testing.T) {
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
 			},
 		},
+		{
+			name:      "Unauthorized",
+			accountID: account.ID,
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthHeader(t, request, tokenMaker, authTypeBearer, user.Username, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.ID)).Times(1)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusForbidden, recorder.Code)
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -107,7 +120,6 @@ func TestGetAccountAPI(t *testing.T) {
 	}
 }
 
-// TODO missing to update tests to test the authorization
 func TestCreateAccountAPI(t *testing.T) {
 	user, _ := randomUser(t)
 	account := randomAccount(user.Username)
@@ -154,9 +166,24 @@ func TestCreateAccountAPI(t *testing.T) {
 			},
 		},
 		{
+			name: "Forbidden",
+			body: gin.H{
+				"currency": account.Currency,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthHeader(t, request, tokenMaker, authTypeBearer, user.Username, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().CreateAccount(gomock.Any(), gomock.Any()).Times(1).Return(db.Account{}, &pq.Error{Code: "23505"})
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusForbidden, recorder.Code)
+			},
+		},
+		{
 			name: "InternalError",
 			body: gin.H{
-				"curreny": account.Currency,
+				"currency": account.Currency,
 			},
 			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
 				addAuthHeader(t, request, tokenMaker, authTypeBearer, user.Username, time.Minute)
@@ -195,7 +222,6 @@ func TestCreateAccountAPI(t *testing.T) {
 	}
 }
 
-// TODO missing to update tests to test the authorization
 func TestListAccountAPI(t *testing.T) {
 	user, _ := randomUser(t)
 
@@ -205,23 +231,23 @@ func TestListAccountAPI(t *testing.T) {
 		accounts[i] = randomAccount(user.Username)
 	}
 
-	type Query struct {
-		pageID   int
-		pageSize int
+	type ListAccountsRequest struct {
+		Offset int
+		Limit  int
 	}
 
 	testCases := []struct {
 		name          string
-		query         Query
+		query         ListAccountsRequest
 		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(recorder *httptest.ResponseRecorder)
 	}{
 		{
 			name: "OK",
-			query: Query{
-				pageID:   1,
-				pageSize: n,
+			query: ListAccountsRequest{
+				Offset: 1,
+				Limit:  n,
 			},
 			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
 				addAuthHeader(t, request, tokenMaker, authTypeBearer, user.Username, time.Minute)
@@ -240,24 +266,10 @@ func TestListAccountAPI(t *testing.T) {
 			},
 		},
 		{
-			name: "BadRequest",
-			query: Query{
-				pageID:   -1,
-				pageSize: -1,
-			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAuthHeader(t, request, tokenMaker, authTypeBearer, user.Username, time.Minute)
-			},
-			buildStubs: func(store *mockdb.MockStore) {},
-			checkResponse: func(recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusBadRequest, recorder.Code)
-			},
-		},
-		{
 			name: "InternalError",
-			query: Query{
-				pageID:   1,
-				pageSize: n,
+			query: ListAccountsRequest{
+				Offset: 1,
+				Limit:  n,
 			},
 			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
 				addAuthHeader(t, request, tokenMaker, authTypeBearer, user.Username, time.Minute)
@@ -267,6 +279,20 @@ func TestListAccountAPI(t *testing.T) {
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+		{
+			name: "Unauthorized",
+			query: ListAccountsRequest{
+				Offset: 1,
+				Limit:  n,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().ListAccounts(gomock.Any(), gomock.Any()).Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, recorder.Code)
 			},
 		},
 	}
@@ -289,8 +315,8 @@ func TestListAccountAPI(t *testing.T) {
 
 			// Add query parameters to request URL
 			q := request.URL.Query()
-			q.Add("page_id", fmt.Sprintf("%d", testCase.query.pageID))
-			q.Add("page_size", fmt.Sprintf("%d", testCase.query.pageSize))
+			q.Add("page_id", fmt.Sprintf("%d", testCase.query.Offset))
+			q.Add("page_size", fmt.Sprintf("%d", testCase.query.Limit))
 			request.URL.RawQuery = q.Encode()
 
 			testCase.setupAuth(t, request, server.tokenMaker)

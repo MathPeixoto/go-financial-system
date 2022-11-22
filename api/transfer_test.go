@@ -154,8 +154,11 @@ func TestCreateTransferAPI(t *testing.T) {
 
 func TestGetTransfer(t *testing.T) {
 	// prepare test data
-	accountOne := randomAccount()
-	accountTwo := randomAccount()
+	userOne, _ := randomUser(t)
+	userTwo, _ := randomUser(t)
+
+	accountOne := randomAccount(userOne.Username)
+	accountTwo := randomAccount(userTwo.Username)
 	dbTransfer := randomTransfer(accountOne, accountTwo)
 
 	testCases := []struct {
