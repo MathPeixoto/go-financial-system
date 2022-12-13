@@ -88,10 +88,7 @@ func (server *Server) getAccount(c *gin.Context) {
 
 func (server *Server) listAccounts(c *gin.Context) {
 	var request ListAccountsRequest
-	if err := c.ShouldBindQuery(&request); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
+	_ = c.ShouldBindQuery(&request)
 
 	authPayload := c.MustGet(authPayloadKey).(*token.Payload)
 	arg := db.ListAccountsParams{
@@ -105,7 +102,6 @@ func (server *Server) listAccounts(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-
 	c.JSON(http.StatusOK, accounts)
 }
 

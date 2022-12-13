@@ -234,23 +234,23 @@ func TestListAccountAPI(t *testing.T) {
 		accounts[i] = randomAccount(user.Username)
 	}
 
-	type Query struct {
-		pageID   int
-		pageSize int
+	type ListAccountsRequest struct {
+		Offset int
+		Limit  int
 	}
 
 	testCases := []struct {
 		name          string
-		query         Query
+		query         ListAccountsRequest
 		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(recorder *httptest.ResponseRecorder)
 	}{
 		{
 			name: "OK",
-			query: Query{
-				pageID:   1,
-				pageSize: n,
+			query: ListAccountsRequest{
+				Offset: 1,
+				Limit:  n,
 			},
 			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
 				addAuthHeader(t, request, tokenMaker, authTypeBearer, user.Username, time.Minute)
@@ -270,9 +270,9 @@ func TestListAccountAPI(t *testing.T) {
 		},
 		{
 			name: "InternalError",
-			query: Query{
-				pageID:   1,
-				pageSize: n,
+			query: ListAccountsRequest{
+				Offset: 1,
+				Limit:  n,
 			},
 			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
 				addAuthHeader(t, request, tokenMaker, authTypeBearer, user.Username, time.Minute)
@@ -282,6 +282,20 @@ func TestListAccountAPI(t *testing.T) {
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+		{
+			name: "Unauthorized",
+			query: ListAccountsRequest{
+				Offset: 1,
+				Limit:  n,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().ListAccounts(gomock.Any(), gomock.Any()).Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, recorder.Code)
 			},
 		},
 	}
@@ -304,8 +318,8 @@ func TestListAccountAPI(t *testing.T) {
 
 			// Add query parameters to request URL
 			q := request.URL.Query()
-			q.Add("page_id", fmt.Sprintf("%d", testCase.query.pageID))
-			q.Add("page_size", fmt.Sprintf("%d", testCase.query.pageSize))
+			q.Add("page_id", fmt.Sprintf("%d", testCase.query.Offset))
+			q.Add("page_size", fmt.Sprintf("%d", testCase.query.Limit))
 			request.URL.RawQuery = q.Encode()
 
 			testCase.setupAuth(t, request, server.tokenMaker)
