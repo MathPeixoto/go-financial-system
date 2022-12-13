@@ -7,7 +7,7 @@ import (
 )
 
 func TestStore_TransferTx(t *testing.T) {
-	store := NewStore(testDb)
+	store := NewStore(testDB)
 	accountOne := createRandomAccount(t)
 	accountTwo := createRandomAccount(t)
 
@@ -103,7 +103,7 @@ func TestStore_TransferTx(t *testing.T) {
 }
 
 func TestStore_TransferTxDeadlock(t *testing.T) {
-	store := NewStore(testDb)
+	store := NewStore(testDB)
 	accountOne := createRandomAccount(t)
 	accountTwo := createRandomAccount(t)
 
@@ -114,16 +114,16 @@ func TestStore_TransferTxDeadlock(t *testing.T) {
 	errs := make(chan error)
 
 	for i := 0; i < n; i++ {
-		fromAccountId := accountOne.ID
-		toAccountId := accountTwo.ID
+		fromAccountID := accountOne.ID
+		toAccountID := accountTwo.ID
 
 		if i%2 == 1 {
-			fromAccountId, toAccountId = accountTwo.ID, accountOne.ID
+			fromAccountID, toAccountID = accountTwo.ID, accountOne.ID
 		}
 
 		go func() {
 			_, err := store.TransferTx(context.Background(), TransferTxParams{
-				fromAccountId, toAccountId, amount,
+				fromAccountID, toAccountID, amount,
 			})
 
 			errs <- err

@@ -2,28 +2,28 @@ package db
 
 import (
 	"database/sql"
+	"github.com/MathPeixoto/go-financial-system/util"
 	_ "github.com/lib/pq"
 	"log"
 	"os"
 	"testing"
 )
 
-const (
-	dbDriver = "postgres"
-	dbSource = "postgresql://root:postgres@localhost:5432/bank?sslmode=disable"
-)
-
 var testQueries *Queries
-var testDb *sql.DB
+var testDB *sql.DB
 
 func TestMain(m *testing.M) {
-	var err error
-	testDb, err = sql.Open(dbDriver, dbSource)
-
+	config, err := util.LoadConfig("../../app.env")
 	if err != nil {
-		log.Fatalln("cannot connect to database:", err)
+		log.Fatal("Cannot load config:", err)
 	}
 
-	testQueries = New(testDb)
+	testDB, err = sql.Open(config.DatabaseDriver, config.DatabaseSource)
+	if err != nil {
+		log.Fatal("Cannot connect to database:", err)
+	}
+
+	testQueries = New(testDB)
+
 	os.Exit(m.Run())
 }
