@@ -1,11 +1,11 @@
 postgres:
-	docker run --name bank -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=postgres -d postgres:14.3
+	docker run --name bankdatabase --network bank-network -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=postgres -d postgres:14.3
 
 createdb:
-	docker exec -it bank createdb --username=root --owner=root bank
+	docker exec -it bankdatabase createdb --username=root --owner=root bank
 
 dropdb:
-	docker exec -it bank dropdb bank
+	docker exec -it bankdatabase dropdb bank
 
 migrate:
 	curl -L https://github.com/golang-migrate/migrate/releases/download/v4.15.2/migrate.linux-amd64.tar.gz | tar xvz \
