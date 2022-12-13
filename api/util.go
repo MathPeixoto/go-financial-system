@@ -6,29 +6,12 @@ import (
 )
 
 // Accounts
-
-func getAccountParams(args CreateAccountRequest) db.CreateAccountParams {
-	return db.CreateAccountParams{
-		Currency: args.Currency,
-		Balance:  0,
-	}
-}
-
 func randomAccount(owner string) db.Account {
 	return db.Account{
 		ID:       util.RandomInt(1, 1000),
 		Owner:    owner,
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
-	}
-}
-
-func createAccount(accountParams db.CreateAccountParams) db.Account {
-	return db.Account{
-		ID:       util.RandomInt(1, 1000),
-		Owner:    accountParams.Owner,
-		Balance:  accountParams.Balance,
-		Currency: accountParams.Currency,
 	}
 }
 
@@ -41,19 +24,19 @@ func updatedAccount(account db.Account, accountBalanceParams db.AddAccountBalanc
 	}
 }
 
-func brlAccount() db.Account {
+func brlAccount(owner string) db.Account {
 	return db.Account{
 		ID:       util.RandomInt(1, 1000),
-		Owner:    "BRL Account",
+		Owner:    owner,
 		Balance:  1000,
 		Currency: "BRL",
 	}
 }
 
-func usdAccount() db.Account {
+func usdAccount(owner string) db.Account {
 	return db.Account{
 		ID:       util.RandomInt(1, 1000),
-		Owner:    "BRL Account",
+		Owner:    owner,
 		Balance:  1000,
 		Currency: "USD",
 	}

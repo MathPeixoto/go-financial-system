@@ -165,9 +165,6 @@ func (server *Server) deleteAccount(c *gin.Context) {
 func validateAccountID(c *gin.Context, server *Server, requestID IDAccountRequest) error {
 	authPayload := c.MustGet(authPayloadKey).(*token.Payload)
 	owner, err := server.store.GetAccountByOwner(c, authPayload.Username)
-	if err != nil {
-		return err
-	}
 
 	if owner.ID != requestID.ID {
 		err = errors.New("account does not belong to the authenticated user")
