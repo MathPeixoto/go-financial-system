@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:14.3
+    container_name: bank-database
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bank
+    ports:
+      - "5432:5432"
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bank
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      GIN_MODE: release
+      DATABASE_SOURCE: postgresql://root:postgres@postgres:5432/bank?sslmode=disable
+    entrypoint: [ "/app/wait-for.sh", "postgres:5432", "--", "/app/start.sh" ]
+    command: [ "/app/main" ]
