@@ -1,3 +1,7 @@
+#file: noinspection YAMLSchemaValidation
+
+# This workflow will deploy a golang project
+
 name: Deploy to production
 
 on:
@@ -15,7 +19,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@master # More information on this action can be found below in the 'AWS Credentials' section
+        uses: aws-actions/configure-aws-credentials@master
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
