@@ -41,8 +41,11 @@ jobs:
           REPOSITORY: bank
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t latest .
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
           docker push -a $REGISTRY/$REPOSITORY
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name bank --region us-east-1
 
       - name: Deploy docker image to EKS
         run: |
