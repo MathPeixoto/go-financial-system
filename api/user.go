@@ -5,6 +5,7 @@ import (
 	db "github.com/MathPeixoto/go-financial-system/db/sqlc"
 	"github.com/MathPeixoto/go-financial-system/util"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"net/http"
 	"time"
@@ -78,8 +79,12 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken string       `json:"access_token"`
-	User        UserResponse `json:"user"`
+	SessionID             uuid.UUID    `json:"session_id"`
+	AccessToken           string       `json:"access_token"`
+	AccessTokenExpiresAt  time.Time    `json:"access_token_expires_at"`
+	RefreshToken          string       `json:"refresh_token"`
+	RefreshTokenExpiresAt time.Time    `json:"refresh_token_expires_at"`
+	User                  UserResponse `json:"user"`
 }
 
 func (server *Server) loginUser(c *gin.Context) {
@@ -104,15 +109,41 @@ func (server *Server) loginUser(c *gin.Context) {
 		return
 	}
 
-	token, err := server.tokenMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
+	token, accessPayload, err := server.tokenMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(user.Username, server.config.RefreshTokenDuration)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	arg := db.CreateSessionParams{
+		ID:           refreshPayload.ID,
+		Username:     user.Username,
+		RefreshToken: refreshToken,
+		UserAgent:    c.Request.UserAgent(),
+		ClientIp:     c.ClientIP(),
+		IsBlocked:    false,
+		ExpiresAt:    refreshPayload.ExpiresAt,
+	}
+
+	session, err := server.store.CreateSession(c, arg)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
 	userResponse := LoginResponse{
-		AccessToken: token,
-		User:        newUserResponse(user),
+		SessionID:             session.ID,
+		AccessToken:           token,
+		AccessTokenExpiresAt:  accessPayload.ExpiresAt,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresAt: session.ExpiresAt,
+		User:                  newUserResponse(user),
 	}
 
 	c.JSON(http.StatusOK, userResponse)

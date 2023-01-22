@@ -15,4 +15,6 @@
 # vendor/
 *.iml
 
+*.log
+
 .idea
