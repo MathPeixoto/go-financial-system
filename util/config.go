@@ -1,14 +1,16 @@
 package util
 
 import (
-	"github.com/spf13/viper"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 // Config contains all the configuration for the application
 // The values are read by viper from a config file or environment variables
 type Config struct {
-	ServerAddress        string        `mapstructure:"SERVER_ADDRESS"`
+	HttpServerAddress    string        `mapstructure:"HTTP_SERVER_ADDRESS"`
+	GrpcServerAddress    string        `mapstructure:"GRPC_SERVER_ADDRESS"`
 	DatabaseDriver       string        `mapstructure:"DATABASE_DRIVER"`
 	DatabaseSource       string        `mapstructure:"DATABASE_SOURCE"`
 	TokenSymmetricKey    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
