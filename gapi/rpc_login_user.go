@@ -8,7 +8,6 @@ import (
 	"github.com/MathPeixoto/go-financial-system/pb"
 	"github.com/MathPeixoto/go-financial-system/util"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -37,14 +36,14 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		return nil, status.Errorf(codes.Internal, "failed to create refresh token")
 	}
 
-	p, _ := peer.FromContext(ctx)
+	//p, _ := peer.FromContext(ctx)
 
 	arg := db.CreateSessionParams{
 		ID:           refreshPayload.ID,
 		Username:     user.Username,
 		RefreshToken: refreshToken,
 		UserAgent:    "",
-		ClientIp:     p.Addr.String(),
+		ClientIp:     "",
 		IsBlocked:    false,
 		ExpiresAt:    refreshPayload.ExpiresAt,
 	}
