@@ -13,6 +13,7 @@ type Config struct {
 	GrpcServerAddress    string        `mapstructure:"GRPC_SERVER_ADDRESS"`
 	DatabaseDriver       string        `mapstructure:"DATABASE_DRIVER"`
 	DatabaseSource       string        `mapstructure:"DATABASE_SOURCE"`
+	MigrationURL         string        `mapstructure:"MIGRATION_URL"`
 	TokenSymmetricKey    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`

@@ -15,6 +15,9 @@ import (
 	"github.com/MathPeixoto/go-financial-system/gapi"
 	"github.com/MathPeixoto/go-financial-system/pb"
 	"github.com/MathPeixoto/go-financial-system/util"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/golang/mock/mockgen/model"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	_ "github.com/lib/pq"
@@ -44,6 +47,9 @@ func main() {
 		log.Fatal().Err(err).Msg("cannot connect to db")
 	}
 
+	// run db migrations
+	runDBMigration(config.MigrationURL, config.DatabaseSource)
+
 	// Create a new store using the database connection
 	store := db.NewStore(conn)
 
@@ -51,6 +57,20 @@ func main() {
 	go runGatewayServer(config, store)
 	// Start the gRPC server
 	runGrpcServer(config, store)
+}
+
+func runDBMigration(migrationURL, dbSource string) {
+	migration, err := migrate.New(migrationURL, dbSource)
+	if err != nil {
+		log.Fatal().Err(err).Msg("cannot create migration")
+	}
+
+	err = migration.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		log.Fatal().Err(err).Msg("cannot run migration")
+	}
+
+	log.Info().Msg("migration completed")
 }
 
 // runGrpcServer starts a gRPC server and listens for incoming requests
