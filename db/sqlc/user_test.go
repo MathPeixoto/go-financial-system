@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"github.com/MathPeixoto/go-financial-system/util"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -43,4 +44,63 @@ func TestQueries_GetUser(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, userTwo)
 	require.Equal(t, userOne, userTwo)
+}
+
+func TestQueries_UpdateFullNameUser(t *testing.T) {
+	oldUser := createRandomUser(t)
+	newFullName := util.RandomOwner()
+
+	arg := UpdateUserParams{
+		FullName: sql.NullString{String: newFullName, Valid: true},
+		Username: oldUser.Username,
+	}
+
+	updatedUser, err := testQueries.UpdateUser(context.Background(), arg)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, updatedUser)
+	require.Equal(t, arg.Username, updatedUser.Username)
+	require.Equal(t, newFullName, updatedUser.FullName)
+	require.NotZero(t, updatedUser.CreatedAt)
+	require.True(t, updatedUser.PasswordChangedAt.IsZero())
+}
+
+func TestQueries_UpdateEmailUser(t *testing.T) {
+	oldUser := createRandomUser(t)
+	newEmail := util.RandomEmail()
+
+	arg := UpdateUserParams{
+		Email:    sql.NullString{String: newEmail, Valid: true},
+		Username: oldUser.Username,
+	}
+
+	updatedUser, err := testQueries.UpdateUser(context.Background(), arg)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, updatedUser)
+	require.Equal(t, arg.Username, updatedUser.Username)
+	require.Equal(t, newEmail, updatedUser.Email)
+	require.NotZero(t, updatedUser.CreatedAt)
+	require.True(t, updatedUser.PasswordChangedAt.IsZero())
+}
+
+func TestQueries_UpdatePasswordUser(t *testing.T) {
+	oldUser := createRandomUser(t)
+	newPassword := util.RandomString(6)
+	hashedPassword, err := util.HashPassword(newPassword)
+	require.NoError(t, err)
+
+	arg := UpdateUserParams{
+		HashedPassword: sql.NullString{String: hashedPassword, Valid: true},
+		Username:       oldUser.Username,
+	}
+
+	updatedUser, err := testQueries.UpdateUser(context.Background(), arg)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, updatedUser)
+	require.Equal(t, arg.Username, updatedUser.Username)
+	require.Equal(t, hashedPassword, updatedUser.HashedPassword)
+	require.NotZero(t, updatedUser.CreatedAt)
+	require.True(t, updatedUser.PasswordChangedAt.IsZero())
 }
