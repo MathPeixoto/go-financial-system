@@ -60,6 +60,7 @@ proto:
 		--openapiv2_out=doc/swagger --openapiv2_opt=allow_merge=true,merge_file_name=bank\
         proto/*.proto
 	statik -src=./doc/swagger -dest=./doc
+
 evans:
 	evans --host localhost --port 9090 -r repl
 

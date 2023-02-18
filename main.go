@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"net"
 	"net/http"
 	"os"
@@ -66,7 +67,7 @@ func runDBMigration(migrationURL, dbSource string) {
 	}
 
 	err = migration.Up()
-	if err != nil && err != migrate.ErrNoChange {
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		log.Fatal().Err(err).Msg("cannot run migration")
 	}
 
@@ -93,7 +94,7 @@ func runGrpcServer(config util.Config, store db.Store) {
 		log.Fatal().Err(err).Msg("cannot create listener")
 	}
 
-	log.Printf("Starting gRPC server at %s", listener.Addr().String())
+	log.Info().Msgf("Starting gRPC server at %s", listener.Addr().String())
 	err = grpcServer.Serve(listener)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot start gRPC server")
@@ -130,7 +131,7 @@ func runGatewayServer(config util.Config, store db.Store) {
 	// Register the handler server to the gRPC-JSON transcoder serve mux.
 	err = pb.RegisterBankHandlerServer(ctx, grpcMux, server)
 	if err != nil {
-		log.Fatal().Err(err).Msg("cannot register handler server")
+		log.Panic().Err(err).Msg("cannot register handler server")
 	}
 
 	// Create a new HTTP serve mux.
@@ -141,7 +142,7 @@ func runGatewayServer(config util.Config, store db.Store) {
 	// Create a new file system using Statik.
 	statikFS, err := fs.New()
 	if err != nil {
-		log.Fatal().Err(err).Msg("cannot create statik fs")
+		log.Panic().Err(err).Msg("cannot create statik fs")
 	}
 
 	// Create a handler for serving Swagger documentation from the Statik file system.
@@ -152,14 +153,20 @@ func runGatewayServer(config util.Config, store db.Store) {
 	// Create a listener on the HTTP server address.
 	listener, err := net.Listen("tcp", config.HttpServerAddress)
 	if err != nil {
-		log.Fatal().Err(err).Msg("cannot create listener")
+		log.Panic().Err(err).Msg("cannot create listener")
 	}
 
-	// Start serving HTTP requests using the created listener and HTTP serve mux.
-	log.Printf("Starting HTTP gateway server at %s", listener.Addr().String())
-	err = http.Serve(listener, mux)
+	// Start serving HTTP requests using the created listener and HTTP serve mux with e seconds of timeout.
+	handler := gapi.HTTPLogger(mux)
+	sv := &http.Server{
+		ReadTimeout:  3 * time.Second,
+		WriteTimeout: 3 * time.Second,
+		Handler:      handler,
+	}
+	log.Info().Msgf("Starting HTTP gateway server at %s", listener.Addr().String())
+	err = sv.Serve(listener)
 	if err != nil {
-		log.Fatal().Err(err).Msg("cannot start HTTP gateway server")
+		log.Panic().Err(err).Msg("cannot start HTTP gateway server")
 	}
 }
 
