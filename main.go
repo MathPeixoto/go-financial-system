@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	"google.golang.org/protobuf/encoding/protojson"
 
@@ -82,8 +83,10 @@ func runGrpcServer(config util.Config, store db.Store) {
 		log.Fatal().Err(err).Msg("cannot create server")
 	}
 
+	grpcLogger := grpc.UnaryInterceptor(gapi.GrpcLogger)
+
 	// Create a new gRPC server
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpcLogger)
 	// Register the bank server to the gRPC server
 	pb.RegisterBankServer(grpcServer, server)
 	// Register the gRPC server to use reflection
