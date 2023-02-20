@@ -2,6 +2,9 @@ package gapi
 
 import (
 	"context"
+	"github.com/MathPeixoto/go-financial-system/worker"
+	"github.com/hibiken/asynq"
+	"time"
 
 	db "github.com/MathPeixoto/go-financial-system/db/sqlc"
 	"github.com/MathPeixoto/go-financial-system/pb"
@@ -23,14 +26,27 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		return nil, status.Errorf(codes.Internal, "failed to hash the password: %s", err)
 	}
 
-	arg := db.CreateUserParams{
-		Username:       req.GetUsername(),
-		HashedPassword: hashedPassword,
-		FullName:       req.GetFullName(),
-		Email:          req.GetEmail(),
+	arg := db.CreateUserTxParams{
+		CreateUserParams: db.CreateUserParams{
+			Username:       req.GetUsername(),
+			HashedPassword: hashedPassword,
+			FullName:       req.GetFullName(),
+			Email:          req.GetEmail(),
+		},
+		AfterCreate: func(user *db.User) error {
+			payload := &worker.PayloadSendVerifyEmail{
+				Username: user.Username,
+			}
+			option := []asynq.Option{
+				asynq.MaxRetry(10),
+				asynq.ProcessIn(10 * time.Second),
+				asynq.Queue(worker.QueueCritical),
+			}
+			return server.distributor.DistributeTaskSendVerifyEmail(ctx, payload, option...)
+		},
 	}
 
-	user, err := server.store.CreateUser(ctx, arg)
+	user, err := server.store.CreateUserTx(ctx, arg)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok { //nolint: errorlint
 			if pqErr.Code.Name() == "unique_violation" {
@@ -42,7 +58,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 	}
 
 	userResponse := &pb.CreateUserResponse{
-		User: converter(user),
+		User: converter(user.User),
 	}
 
 	return userResponse, nil

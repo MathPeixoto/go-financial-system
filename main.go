@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/MathPeixoto/go-financial-system/worker"
+	"github.com/hibiken/asynq"
 	"net"
 	"net/http"
 	"os"
@@ -55,10 +57,27 @@ func main() {
 	// Create a new store using the database connection
 	store := db.NewStore(conn)
 
+	// Config redis
+	redisOpts := asynq.RedisClientOpt{
+		Addr: config.RedisAddress,
+	}
+	distributor := worker.NewRedisTaskDistributor(redisOpts)
+
+	// Start the task processor in a new goroutine
+	go taskProcessor(redisOpts, store)
 	// Start the gateway server in a new goroutine
-	go runGatewayServer(config, store)
+	go runGatewayServer(config, store, distributor)
 	// Start the gRPC server
-	runGrpcServer(config, store)
+	runGrpcServer(config, store, distributor)
+}
+
+func taskProcessor(redisOpt asynq.RedisClientOpt, store db.Store) {
+	processor := worker.NewRedisTaskProcessor(redisOpt, store)
+	log.Info().Msg("starting task processor")
+	err := processor.Start()
+	if err != nil {
+		log.Fatal().Err(err).Msg("cannot start task processor")
+	}
 }
 
 func runDBMigration(migrationURL, dbSource string) {
@@ -76,9 +95,9 @@ func runDBMigration(migrationURL, dbSource string) {
 }
 
 // runGrpcServer starts a gRPC server and listens for incoming requests
-func runGrpcServer(config util.Config, store db.Store) {
+func runGrpcServer(config util.Config, store db.Store, distributor worker.TaskDistributor) {
 	// Create a new gapi server
-	server, err := gapi.NewServer(config, store)
+	server, err := gapi.NewServer(config, store, distributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot create server")
 	}
@@ -105,9 +124,9 @@ func runGrpcServer(config util.Config, store db.Store) {
 }
 
 // runGatewayServer starts the HTTP gateway server for the bank service with the given configuration and database store.
-func runGatewayServer(config util.Config, store db.Store) {
+func runGatewayServer(config util.Config, store db.Store, distributor worker.TaskDistributor) {
 	// Create a new server using the provided configuration and store.
-	server, err := gapi.NewServer(config, store)
+	server, err := gapi.NewServer(config, store, distributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot create server")
 	}
