@@ -1,5 +1,10 @@
 version: "3.9"
 services:
+  redis:
+    image: redis:alpine3.17
+    container_name: bank-redis
+    ports:
+      - "6379:6379"
   postgres:
     image: postgres:14.3
     container_name: bank-database
@@ -19,8 +24,10 @@ services:
       - "9090:9090"
     depends_on:
       - postgres
+      - redis
     environment:
       GIN_MODE: release
       DATABASE_SOURCE: postgresql://root:postgres@postgres:5432/bank?sslmode=disable
+      REDIS_ADDRESS: redis:6379
     entrypoint: [ "/app/wait-for.sh", "postgres:5432", "--", "/app/start.sh" ]
     command: [ "/app/main" ]
