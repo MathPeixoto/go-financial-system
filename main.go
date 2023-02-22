@@ -173,7 +173,7 @@ func runGatewayServer(config util.Config, store db.Store, distributor worker.Tas
 	mux.Handle("/swagger/", swaggerHandler)
 
 	// Create a listener on the HTTP server address.
-	listener, err := net.Listen("tcp", config.HttpServerAddress)
+	listener, err := net.Listen("tcp", config.HTTPServerAddress)
 	if err != nil {
 		log.Panic().Err(err).Msg("cannot create listener")
 	}
@@ -200,7 +200,7 @@ func runGinServer(config util.Config, store db.Store) {
 		log.Fatal().Err(err).Msg("cannot create server")
 	}
 	// Starts the server and listens on the address specified in the config.
-	err = server.Start(config.HttpServerAddress)
+	err = server.Start(config.HTTPServerAddress)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot start server")
 	}
