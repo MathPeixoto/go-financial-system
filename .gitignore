@@ -21,4 +21,4 @@
 .vscode
 /postgres
 
-minikube
+kubelocal

@@ -11,12 +11,13 @@ metadata:
   name: bank-api-ingress
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
 spec:
   defaultBackend:
     service:
       name: bank-api-service
       port:
-        number: 80
+        name: http
   ingressClassName: nginx
   rules:
   - host: "awesome-api.net" # This is the domain name I registered with Route53, maybe I have to change to "go.awesome-api.net" in A record
@@ -28,7 +29,7 @@ spec:
             service:
               name: bank-api-service
               port:
-                number: 80
+                name: http
   tls:
   - hosts:
     - awesome-api.net
