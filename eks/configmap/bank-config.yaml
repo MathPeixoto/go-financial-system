@@ -1,6 +1,0 @@
-apiVersion: v1
-data:
-  REDIS_ADDRESS: redis-service:6379
-kind: ConfigMap
-metadata:
-  name: bank-api-config-bgf5h6728t
