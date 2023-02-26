@@ -7,9 +7,8 @@ resources:
   - service/redis-service.yaml
   - deployment/deployment.yaml
   - service/service.yaml
-  - https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
+#  - https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml                                 run only the first time that cluster is created
   - issuer.yaml
-  - https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.6.4/deploy/static/provider/aws/deploy.yaml
+#  - https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.6.4/deploy/static/provider/aws/deploy.yaml      run only the first time that cluster is created
   - ingress/http-ingress.yaml
-#  - grpc-issuer.yaml
-#  - ingress/grpc-ingress.yaml
+  - ingress/grpc-ingress.yaml

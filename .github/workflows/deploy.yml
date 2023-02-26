@@ -49,10 +49,14 @@ jobs:
 
       - name: Deploy docker image to EKS
         run: |
-          kubectl apply -f eks/configmap/aws-auth.yaml
-          kubectl apply -f eks/deployment/redis-deployment.yaml
-          kubectl apply -f eks/service/redis-service.yaml
-          kubectl apply -f eks/deployment/deployment.yaml
-          kubectl apply -f eks/service/service.yaml
-          kubectl apply -f eks/issuer.yaml
-          kubectl apply -f eks/ingress/http-ingress.yaml
+#          kubectl apply -f eks/configmap/aws-auth.yaml
+#          kubectl apply -f eks/deployment/redis-deployment.yaml
+#          kubectl apply -f eks/service/redis-service.yaml
+#          kubectl apply -f eks/deployment/deployment.yaml
+#          kubectl apply -f eks/service/service.yaml
+##          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml                                 run only the first time that cluster is created
+#          kubectl apply -f eks/issuer.yaml
+##          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.6.4/deploy/static/provider/aws/deploy.yaml          run only the first time that cluster is created
+#          kubectl apply -f eks/ingress/http-ingress.yaml
+#          kubectl apply -f eks/ingress/grpc-ingress.yaml
+          kubectl apply -k eks/

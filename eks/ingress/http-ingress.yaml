@@ -1,11 +1,4 @@
 apiVersion: networking.k8s.io/v1
-kind: IngressClass
-metadata:
-  name: nginx
-spec:
-  controller: k8s.io/ingress-nginx
----
-apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: bank-api-ingress
@@ -20,7 +13,7 @@ spec:
         name: http
   ingressClassName: nginx
   rules:
-  - host: "awesome-api.net" # This is the domain name I registered with Route53, maybe I have to change to "go.awesome-api.net" in A record
+  - host: awesome-api.net # This is the domain name I registered with Route53, maybe I have to change to "go.awesome-api.net" in A record
     http:
       paths:
         - pathType: Prefix
